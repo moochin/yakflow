@@ -988,8 +988,15 @@ function renderSurvey() {
         </datalist>
         <div class="slider-ticks">
           ${SCALE_OPTIONS.map(
-            (option) =>
-              `<div class="tick">
+            (option, index) =>
+              `<div class="tick ${index === 0 ? "tick-start" : ""} ${
+                index === SCALE_OPTIONS.length - 1 ? "tick-end" : ""
+              }" style="left: ${
+                ((option.value - SCALE_OPTIONS[0].value) /
+                  (SCALE_OPTIONS[SCALE_OPTIONS.length - 1].value -
+                    SCALE_OPTIONS[0].value)) *
+                100
+              }%">
                 <strong>${option.value}</strong>
                 <span>${option.label}</span>
               </div>`

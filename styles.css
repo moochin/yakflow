@@ -342,10 +342,27 @@ button.ghost {
 }
 
 .slider-ticks {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 6px;
+  position: relative;
+  height: 54px;
+  margin-top: 2px;
+}
+
+.slider-ticks .tick {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
   text-align: center;
+  width: 132px;
+}
+
+.slider-ticks .tick.tick-start {
+  transform: translateX(0);
+  text-align: left;
+}
+
+.slider-ticks .tick.tick-end {
+  transform: translateX(-100%);
+  text-align: right;
 }
 
 .slider-ticks .tick strong {
@@ -495,5 +512,13 @@ textarea {
 
   .header-actions button {
     flex: 1;
+  }
+
+  .slider-ticks .tick {
+    width: 92px;
+  }
+
+  .slider-ticks .tick span {
+    font-size: 0.68rem;
   }
 }
