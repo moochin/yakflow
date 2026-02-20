@@ -835,20 +835,39 @@ function getCheckState(capability, response) {
   return checks.map((_, index) => Boolean(response.checks[index]));
 }
 
+function checklistScoreRange(checkedCount, totalChecks) {
+  if (totalChecks <= 0) {
+    return { low: 1, high: 5 };
+  }
+  if (checkedCount <= 0) {
+    return { low: 1, high: 1 };
+  }
+  if (checkedCount >= totalChecks) {
+    return { low: 4, high: 5 };
+  }
+  const ratio = checkedCount / totalChecks;
+  if (ratio < 0.5) {
+    return { low: 2, high: 3 };
+  }
+  return { low: 3, high: 4 };
+}
+
+function scoreFromChecks(checkedCount, totalChecks) {
+  const range = checklistScoreRange(checkedCount, totalChecks);
+  // Favor the lower score in each guidance band for conservative scoring.
+  return range.low;
+}
+
 function checklistCalibration(checkedCount, totalChecks) {
   if (totalChecks === 0) {
     return "No checklist signals configured for this capability.";
   }
-  if (checkedCount === 0) {
-    return "Calibration: 0 checks usually maps to score 1.";
+  const range = checklistScoreRange(checkedCount, totalChecks);
+  const autoScore = scoreFromChecks(checkedCount, totalChecks);
+  if (range.low === range.high) {
+    return `Calibration: ${checkedCount}/${totalChecks} checks maps to ${range.low}. Auto-score sets ${autoScore}.`;
   }
-  if (checkedCount === totalChecks) {
-    return `Calibration: ${checkedCount}/${totalChecks} checks usually maps to 4-5 if consistent across teams.`;
-  }
-  return `Calibration: ${checkedCount}/${totalChecks} checks usually maps to ${Math.max(
-    2,
-    checkedCount
-  )}-${Math.min(4, checkedCount + 2)}.`;
+  return `Calibration: ${checkedCount}/${totalChecks} checks maps to ${range.low}-${range.high}. Auto-score sets ${autoScore} (lower bound).`;
 }
 
 function groupByCategory() {
@@ -1006,7 +1025,7 @@ function renderSurvey() {
           ${score === null || score === undefined ? "Move the slider to set a score." : SCALE_OPTIONS.find((option) => option.value === score)?.hint || ""}
         </div>
         <div class="score-rubric">
-          Consistency rubric: 1 = absent, 3 = works in pockets, 5 = default path across teams.
+          Auto-scoring uses checks and favors the lower band value. Rubric: 1 = absent, 3 = works in pockets, 5 = default path across teams.
         </div>
       </div>
     </div>
@@ -1050,46 +1069,59 @@ function renderSurvey() {
 
   updateFollowups(score);
 
+  const slider = surveyView.querySelector("#scoreSlider");
+  const scoreLabelEl = surveyView.querySelector("#scoreLabel");
+  const scoreHintEl = surveyView.querySelector("#scoreHint");
+  const setScoreUI = (newScore) => {
+    const option = SCALE_OPTIONS.find((item) => item.value === newScore);
+    if (slider) {
+      slider.value = String(newScore);
+    }
+    if (scoreLabelEl) {
+      scoreLabelEl.textContent = `${newScore} / 5 · ${option ? option.label : ""}`;
+    }
+    if (scoreHintEl) {
+      scoreHintEl.textContent = option ? option.hint : "";
+    }
+  };
+
   const checkSummaryEl = surveyView.querySelector("#checkSummary");
   surveyView.querySelectorAll(".cap-check").forEach((input) => {
     input.addEventListener("change", () => {
       const latestChecks = Array.from(
         surveyView.querySelectorAll(".cap-check")
       ).map((checkbox) => checkbox.checked);
+      const latestCount = latestChecks.filter(Boolean).length;
+      const autoScore = scoreFromChecks(latestCount, latestChecks.length);
       const existing = state.responses[cap.id] || response;
       state.responses[cap.id] = {
         ...existing,
         checks: latestChecks,
+        score: autoScore,
       };
       if (checkSummaryEl) {
-        const latestCount = latestChecks.filter(Boolean).length;
         checkSummaryEl.textContent = checklistCalibration(
           latestCount,
           latestChecks.length
         );
       }
+      setScoreUI(autoScore);
+      updateFollowups(autoScore);
       saveState();
+      renderSidebar();
+      updateProgress();
     });
   });
 
-  const slider = surveyView.querySelector("#scoreSlider");
-  const scoreLabelEl = surveyView.querySelector("#scoreLabel");
-  const scoreHintEl = surveyView.querySelector("#scoreHint");
   if (slider) {
     slider.addEventListener("input", (event) => {
       const newScore = Number(event.target.value);
-      const option = SCALE_OPTIONS.find((item) => item.value === newScore);
       const existing = state.responses[cap.id] || response;
       state.responses[cap.id] = {
         ...existing,
         score: newScore,
       };
-      if (scoreLabelEl) {
-        scoreLabelEl.textContent = `${newScore} / 5 · ${option ? option.label : ""}`;
-      }
-      if (scoreHintEl) {
-        scoreHintEl.textContent = option ? option.hint : "";
-      }
+      setScoreUI(newScore);
       updateFollowups(newScore);
       saveState();
       renderSidebar();
