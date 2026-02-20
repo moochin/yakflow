@@ -1,10 +1,10 @@
-# Otterflow
+# Yakflow
 
 A lightweight web survey that helps engineering teams assess adoption of the 24 Accelerate capabilities, score current maturity, and get practical next actions to improve fast flow.
 
 ## Why this exists
 
-Many capability surveys are heavy on management language. Otterflow is written for engineers and focuses on observable signals from day-to-day delivery work.
+Many capability surveys are heavy on management language. Yakflow is written for engineers and focuses on observable signals from day-to-day delivery work.
 
 ## What it does
 
