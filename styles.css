@@ -523,6 +523,7 @@ textarea {
   border: 1px solid var(--line);
   border-radius: 14px;
   padding: 16px;
+  background: #ffffff;
 }
 
 .metric h4 {
@@ -540,6 +541,30 @@ textarea {
   border-radius: 16px;
   padding: 16px;
   background: #fdfaf5;
+}
+
+.metric.band-strong,
+.next-step-card.band-strong {
+  border-color: rgba(47, 111, 100, 0.4);
+  background: rgba(47, 111, 100, 0.08);
+}
+
+.metric.band-watch,
+.next-step-card.band-watch {
+  border-color: rgba(196, 160, 58, 0.45);
+  background: rgba(196, 160, 58, 0.08);
+}
+
+.metric.band-risk,
+.next-step-card.band-risk {
+  border-color: rgba(168, 74, 46, 0.45);
+  background: rgba(168, 74, 46, 0.08);
+}
+
+.metric.band-none,
+.next-step-card.band-none {
+  border-style: dashed;
+  background: #fbfaf8;
 }
 
 .next-step-card h5 {

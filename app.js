@@ -929,7 +929,7 @@ function renderSidebar() {
 
 function renderSurvey() {
   const cap = capabilities[state.currentIndex];
-  const response = state.responses[cap.id] || { score: null, note: "" };
+  const response = state.responses[cap.id] || { score: 1, note: "" };
   const score = response.score;
   const examples = EXAMPLES_BY_ID[cap.id] || [];
   const checks = cap.checks || [];
@@ -990,7 +990,7 @@ function renderSurvey() {
       <div class="slider-card">
         <div class="slider-header">
           <span>Score</span>
-          <span id="scoreLabel">${score === null || score === undefined ? "Not answered" : `${score} / 5 · ${scoreLabel(score)}`}</span>
+          <span id="scoreLabel">${score} / 5 · ${scoreLabel(score)}</span>
         </div>
         <input
           type="range"
@@ -998,7 +998,7 @@ function renderSurvey() {
           min="1"
           max="5"
           step="1"
-          value="${score ?? 3}"
+          value="${score ?? 1}"
           list="scoreTicks"
           aria-label="Capability score"
         />
@@ -1022,7 +1022,7 @@ function renderSurvey() {
           ).join("")}
         </div>
         <div class="slider-hint" id="scoreHint">
-          ${score === null || score === undefined ? "Move the slider to set a score." : SCALE_OPTIONS.find((option) => option.value === score)?.hint || ""}
+          ${SCALE_OPTIONS.find((option) => option.value === score)?.hint || ""}
         </div>
         <div class="score-rubric">
           Auto-scoring uses checks and favors the lower band value. Rubric: 1 = absent, 3 = works in pockets, 5 = default path across teams.
@@ -1534,7 +1534,7 @@ function renderResults() {
     <p>Use this summary to align on priorities and agree on next steps.</p>
 
     <div class="results-section results-grid">
-      <div class="metric">
+      <div class="metric ${impactBand(overall).className}">
         <h4>Overall adoption</h4>
         <div class="score">${overall === null ? "--" : overall.toFixed(1)} / 5</div>
         <div>${overall === null ? "No scores yet" : scoreLabel(Math.round(overall))}</div>
@@ -1542,11 +1542,12 @@ function renderResults() {
       ${Object.keys(categoryScores)
         .map((category) => {
           const avg = categoryScores[category];
+          const band = impactBand(avg);
           return `
-            <div class="metric">
+            <div class="metric ${band.className}">
               <h4>${category}</h4>
               <div class="score">${avg === null ? "--" : avg.toFixed(1)} / 5</div>
-              <div>${avg === null ? "No scores yet" : scoreLabel(Math.round(avg))}</div>
+              <div>${avg === null ? "No scores yet" : scoreLabel(Math.round(avg))} · ${band.label}</div>
             </div>
           `;
         })
@@ -1596,18 +1597,22 @@ function renderResults() {
           .map((item) => {
             if (item.focusItems.length === 0) {
               return `
-                <div class="next-step-card">
+                <div class="next-step-card band-none">
                   <h5>${item.category}</h5>
                   <div>No scored capabilities yet in this category.</div>
                 </div>
               `;
             }
             const focusNames = item.focusItems.map((focus) => focus.cap.name).join(", ");
+            const band = impactBand(item.average);
             return `
-              <div class="next-step-card">
+              <div class="next-step-card ${band.className}">
                 <h5>${item.category}</h5>
                 <div class="category-focus">
                   Average: ${item.average === null ? "--" : item.average.toFixed(1)} / 5
+                </div>
+                <div class="category-focus">
+                  Signal: ${band.label}
                 </div>
                 <div class="category-focus">
                   Focus now: ${focusNames}
@@ -1630,7 +1635,7 @@ function renderResults() {
           ${unanswered
             .map(
               (cap) => `
-                <div class="metric">
+                <div class="metric band-none">
                   <strong>${cap.name}</strong>
                   <div>${cap.category}</div>
                 </div>
@@ -1645,14 +1650,15 @@ function renderResults() {
       <h3>Top next steps</h3>
       <p>Focus on the lowest-scoring capabilities first.</p>
       <div class="results-grid">
-        ${topPriorities.length === 0 ? "<div class=\"metric\">All capabilities are fully adopted based on current answers.</div>" : ""}
+        ${topPriorities.length === 0 ? "<div class=\"metric band-strong\">All capabilities are fully adopted based on current answers.</div>" : ""}
         ${topPriorities
           .map(({ cap, response }) => {
+            const band = impactBand(response.score);
             return `
-              <div class="next-step-card">
+              <div class="next-step-card ${band.className}">
                 <h5>${cap.name}</h5>
                 <div style="color: ${scoreColor(response.score)}; font-weight: 600;">
-                  ${scoreLabel(response.score)}
+                  ${scoreLabel(response.score)} · ${band.label}
                 </div>
                 ${response.blocker ? `<p><strong>Blocker:</strong> ${escapeHtml(response.blocker)}</p>` : ""}
                 <ul>
