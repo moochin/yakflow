@@ -1,3 +1,7 @@
+<p align="center">
+  <img width="360" alt="Yakflow msacot" src="https://github.com/user-attachments/assets/3bdc9659-0f10-41bf-8aa9-108ebf8953bf" />
+</p>
+
 # Yakflow
 
 A lightweight web survey that helps engineering teams assess adoption of the 24 Accelerate capabilities, score current maturity, and get practical next actions to improve fast flow.
