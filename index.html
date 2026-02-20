@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Accelerate Capability Survey</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page">
+      <header class="header">
+        <div class="header-copy">
+          <div class="eyebrow">Accelerate capability survey</div>
+          <h1>Measure adoption across the 24 capabilities</h1>
+          <p>
+            A lightweight team-level survey to understand current adoption,
+            capture blockers, and generate tangible next steps.
+          </p>
+        </div>
+        <div class="header-actions">
+          <button id="viewResultsBtn" class="secondary">View results</button>
+          <button id="resetBtn" class="ghost">Reset</button>
+        </div>
+      </header>
+
+      <div class="layout">
+        <aside class="sidebar">
+          <div class="progress">
+            <div class="progress-label">
+              <span id="progressText">0 of 24</span>
+              <span id="progressPercent">0%</span>
+            </div>
+            <div class="progress-bar">
+              <div id="progressFill"></div>
+            </div>
+          </div>
+
+          <div id="categoryList" class="category-list"></div>
+
+          <div class="sidebar-footer">
+            <div class="legend">
+              <span class="dot current"></span> Current
+            </div>
+            <div class="legend">
+              <span class="dot done"></span> Completed
+            </div>
+            <div class="legend">
+              <span class="dot pending"></span> Not started
+            </div>
+          </div>
+        </aside>
+
+        <main class="main">
+          <section id="surveyView" class="card"></section>
+          <section id="resultsView" class="card hidden"></section>
+        </main>
+      </div>
+
+      <footer class="footer">
+        Not an official DORA survey. Use this as a starting point for team
+        discussion and action planning.
+      </footer>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
