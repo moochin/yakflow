@@ -6,6 +6,8 @@
 
 A lightweight web survey that helps engineering teams assess adoption of the 24 Accelerate capabilities, score current maturity, and get practical next actions to improve fast flow.
 
+You can use it here via GitHub Pages https://moochin.github.io/yakflow/ 
+
 ## Why this exists
 
 Many capability surveys are heavy on management language. Yakflow is written for engineers and focuses on observable signals from day-to-day delivery work.
