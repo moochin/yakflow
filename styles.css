@@ -441,6 +441,84 @@ textarea {
   display: block;
 }
 
+.impact-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.impact-column {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px;
+  background: #fdfaf5;
+}
+
+.impact-column h4 {
+  margin: 2px 0 10px;
+}
+
+.impact-node {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px;
+  background: #ffffff;
+  margin-bottom: 10px;
+}
+
+.impact-node h5 {
+  margin: 0 0 4px;
+  font-size: 0.95rem;
+}
+
+.impact-score {
+  font-weight: 700;
+  color: var(--accent-strong);
+}
+
+.impact-band {
+  font-size: 0.8rem;
+  margin-top: 2px;
+}
+
+.impact-node p {
+  margin: 8px 0 0;
+  font-size: 0.82rem;
+}
+
+.impact-node.band-strong {
+  border-color: rgba(47, 111, 100, 0.4);
+}
+
+.impact-node.band-watch {
+  border-color: rgba(196, 160, 58, 0.45);
+}
+
+.impact-node.band-risk {
+  border-color: rgba(168, 74, 46, 0.45);
+}
+
+.impact-node.band-none {
+  border-style: dashed;
+}
+
+.impact-pathways {
+  margin-top: 10px;
+  display: grid;
+  gap: 8px;
+}
+
+.impact-path {
+  font-size: 0.86rem;
+  color: var(--muted);
+}
+
+.impact-note {
+  margin-top: 10px;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
 .metric {
   border: 1px solid var(--line);
   border-radius: 14px;
@@ -479,10 +557,24 @@ textarea {
   margin-top: 4px;
 }
 
+.references {
+  display: grid;
+  gap: 8px;
+}
+
+.references a {
+  color: var(--accent-strong);
+  text-decoration-thickness: 1px;
+}
+
 .footer {
   margin-top: 24px;
   color: var(--muted);
   font-size: 0.85rem;
+}
+
+.footer a {
+  color: var(--accent-strong);
 }
 
 @keyframes fadeUp {
@@ -520,5 +612,9 @@ textarea {
 
   .slider-ticks .tick span {
     font-size: 0.68rem;
+  }
+
+  .impact-grid {
+    grid-template-columns: 1fr;
   }
 }

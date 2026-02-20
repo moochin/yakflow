@@ -1174,6 +1174,177 @@ function calculateAverages() {
   return { overall, categoryScores };
 }
 
+function averageScores(values) {
+  const valid = values.filter((value) => typeof value === "number");
+  if (valid.length === 0) return null;
+  return valid.reduce((sum, value) => sum + value, 0) / valid.length;
+}
+
+function averageForCapabilityIds(ids) {
+  return averageScores(
+    ids
+      .map((id) => state.responses[id]?.score)
+      .filter((value) => value !== null && value !== undefined)
+  );
+}
+
+function impactBand(score) {
+  if (score === null) {
+    return { label: "No data", className: "band-none" };
+  }
+  if (score < 2.5) {
+    return { label: "High drag risk", className: "band-risk" };
+  }
+  if (score < 3.5) {
+    return { label: "Mixed signal", className: "band-watch" };
+  }
+  return { label: "Positive signal", className: "band-strong" };
+}
+
+function buildImpactModel() {
+  const leanProductDevelopment = averageForCapabilityIds([
+    "pp-small-batches",
+    "pp-value-stream",
+    "pp-customer-feedback",
+    "pp-experimentation",
+  ]);
+  const leanManagement = averageForCapabilityIds([
+    "lm-wip-limits",
+    "lm-visualizing-work",
+    "lm-monitoring",
+    "lm-change-approval",
+  ]);
+  const technicalPractices = averageForCapabilityIds([
+    "cd-version-control",
+    "cd-deployment-automation",
+    "cd-continuous-integration",
+    "cd-trunk-based",
+    "cd-test-automation",
+    "cd-test-data",
+    "cd-security",
+    "arch-loosely-coupled",
+    "arch-empowered-teams",
+    "lm-proactive-notification",
+  ]);
+  const transformationalLeadership = averageForCapabilityIds([
+    "cult-transformational-leadership",
+  ]);
+  const westrumCulture = averageForCapabilityIds(["cult-westrum"]);
+  const continuousDelivery = averageForCapabilityIds([
+    "cd-version-control",
+    "cd-deployment-automation",
+    "cd-continuous-integration",
+    "cd-trunk-based",
+    "cd-test-automation",
+    "cd-test-data",
+    "cd-security",
+    "cd-continuous-delivery",
+    "arch-loosely-coupled",
+    "arch-empowered-teams",
+    "lm-monitoring",
+    "lm-proactive-notification",
+  ]);
+  const softwareDeliveryPerformance = averageScores([
+    continuousDelivery,
+    leanProductDevelopment,
+    leanManagement,
+    westrumCulture,
+  ]);
+  const jobSatisfaction = averageForCapabilityIds(["cult-job-satisfaction"]);
+  const lowerBurnout = averageScores([
+    jobSatisfaction,
+    leanManagement,
+    westrumCulture,
+  ]);
+  const lowerDeploymentPain = averageScores([
+    continuousDelivery,
+    technicalPractices,
+  ]);
+  const lowerRework = averageScores([
+    continuousDelivery,
+    leanProductDevelopment,
+    averageForCapabilityIds(["cd-test-automation", "cd-continuous-integration"]),
+  ]);
+  const organizationalPerformance = averageScores([
+    softwareDeliveryPerformance,
+    jobSatisfaction,
+  ]);
+
+  return {
+    upstream: [
+      {
+        label: "Transformational leadership",
+        score: transformationalLeadership,
+        detail: "Vision, support, and obstacle removal for engineering teams.",
+      },
+      {
+        label: "Lean product development",
+        score: leanProductDevelopment,
+        detail: "Small batches, visible flow, customer feedback, experimentation.",
+      },
+      {
+        label: "Lean management",
+        score: leanManagement,
+        detail: "WIP limits, visual work, production feedback, lightweight approvals.",
+      },
+      {
+        label: "Technical practices",
+        score: technicalPractices,
+        detail: "CI/CD, test automation, security, architecture, monitoring.",
+      },
+    ],
+    deliverySystem: [
+      {
+        label: "Westrum culture",
+        score: westrumCulture,
+        detail: "Information flow, psychological safety, and learning behavior.",
+      },
+      {
+        label: "Continuous delivery capability",
+        score: continuousDelivery,
+        detail: "Ability to keep software deployable and release safely on demand.",
+      },
+      {
+        label: "Software delivery performance",
+        score: softwareDeliveryPerformance,
+        detail: "Directional signal for speed and stability outcomes.",
+      },
+    ],
+    outcomes: [
+      {
+        label: "Job satisfaction",
+        score: jobSatisfaction,
+        detail: "Team engagement and sustainability signal.",
+      },
+      {
+        label: "Lower burnout risk",
+        score: lowerBurnout,
+        detail: "Directional signal from flow, safety, and workload health.",
+      },
+      {
+        label: "Lower deployment pain",
+        score: lowerDeploymentPain,
+        detail: "Directional signal for safer, less painful releases.",
+      },
+      {
+        label: "Lower rework",
+        score: lowerRework,
+        detail: "Directional signal for less redo and defect-driven churn.",
+      },
+      {
+        label: "Organizational performance",
+        score: organizationalPerformance,
+        detail: "Directional composite from delivery and people outcomes.",
+      },
+    ],
+    pathways: [
+      "Transformational leadership supports lean product, lean management, and technical practices.",
+      "Westrum culture and continuous delivery capability reinforce software delivery performance.",
+      "Software delivery performance and job satisfaction contribute to organizational performance.",
+    ],
+  };
+}
+
 function renderRadarChart(canvasId, labels, values, maxValue) {
   const canvas = document.getElementById(canvasId);
   if (!canvas) return;
@@ -1265,6 +1436,7 @@ function renderRadarChart(canvasId, labels, values, maxValue) {
 function renderResults() {
   const { overall, categoryScores } = calculateAverages();
   const unanswered = capabilities.filter((cap) => !isAnswered(cap));
+  const impactModel = buildImpactModel();
   const categoryLabels = Object.keys(categoryScores);
   const categoryValues = categoryLabels.map(
     (label) => categoryScores[label] ?? 0
@@ -1306,6 +1478,20 @@ function renderResults() {
 
   const priorities = scoredCaps.filter((item) => item.response.score < 5);
   const topPriorities = priorities.slice(0, 8);
+  const renderImpactNodes = (nodes) =>
+    nodes
+      .map((node) => {
+        const band = impactBand(node.score);
+        return `
+          <div class="impact-node ${band.className}">
+            <h5>${node.label}</h5>
+            <div class="impact-score">${node.score === null ? "--" : node.score.toFixed(1)} / 5</div>
+            <div class="impact-band">${band.label}</div>
+            <p>${node.detail}</p>
+          </div>
+        `;
+      })
+      .join("");
 
   resultsView.innerHTML = `
     <div class="card-header">
@@ -1341,6 +1527,33 @@ function renderResults() {
       <div class="chart-card">
         <canvas id="radarChart" width="520" height="420"></canvas>
       </div>
+    </div>
+
+    <div class="results-section">
+      <h3>Relationship and impact map</h3>
+      <p>Directional view of how practices influence delivery and organizational outcomes, based on Accelerate/DORA research.</p>
+      <div class="impact-grid">
+        <div class="impact-column">
+          <h4>Upstream practices</h4>
+          ${renderImpactNodes(impactModel.upstream)}
+        </div>
+        <div class="impact-column">
+          <h4>Delivery system</h4>
+          ${renderImpactNodes(impactModel.deliverySystem)}
+        </div>
+        <div class="impact-column">
+          <h4>Outcomes</h4>
+          ${renderImpactNodes(impactModel.outcomes)}
+        </div>
+      </div>
+      <div class="impact-pathways">
+        ${impactModel.pathways
+          .map((pathway) => `<div class="impact-path">→ ${pathway}</div>`)
+          .join("")}
+      </div>
+      <p class="impact-note">
+        Note: outcome scores are directional indicators derived from your survey responses; they are not causal estimates.
+      </p>
     </div>
 
     <div class="results-section">
@@ -1424,6 +1637,15 @@ function renderResults() {
       <button class="ghost" id="backToSurvey">Back to survey</button>
       <button class="secondary" id="exportBtn">Download JSON</button>
     </div>
+
+    <div class="results-section">
+      <h3>Research references</h3>
+      <div class="references">
+        <a href="https://itrevolution.com/product/accelerate/" target="_blank" rel="noopener">Accelerate (Forsgren, Humble, Kim)</a>
+        <a href="https://dora.dev/research/" target="_blank" rel="noopener">DORA Research Program</a>
+        <a href="https://dora.dev/research/state-of-devops/" target="_blank" rel="noopener">State of DevOps reports</a>
+      </div>
+    </div>
   `;
 
   renderRadarChart("radarChart", categoryLabels, categoryValues, 5);
@@ -1451,6 +1673,7 @@ function renderResults() {
 
 function buildReport() {
   const { overall, categoryScores } = calculateAverages();
+  const impactModel = buildImpactModel();
   return {
     generatedAt: new Date().toISOString(),
     scale: {
@@ -1459,6 +1682,12 @@ function buildReport() {
     },
     overallAverage: overall,
     categoryAverages: categoryScores,
+    relationshipAndImpact: impactModel,
+    researchReferences: [
+      "https://itrevolution.com/product/accelerate/",
+      "https://dora.dev/research/",
+      "https://dora.dev/research/state-of-devops/",
+    ],
     responses: capabilities.map((cap) => {
       const response = state.responses[cap.id] || {};
       return {

@@ -1,16 +1,10 @@
-# Yakflow
-
-<p align="center">
-<img width="300" height="300" alt="image" src="https://github.com/user-attachments/assets/b6259114-2567-47ff-8c46-00744e7a48cb"/>
-</p>
+# Otterflow
 
 A lightweight web survey that helps engineering teams assess adoption of the 24 Accelerate capabilities, score current maturity, and get practical next actions to improve fast flow.
 
-You can use it here via GitHub Pages https://moochin.github.io/yakflow/ 
-
 ## Why this exists
 
-Many capability surveys are heavy on management language. Yakflow is written for engineers and focuses on observable signals from day-to-day delivery work.
+Many capability surveys are heavy on management language. Otterflow is written for engineers and focuses on observable signals from day-to-day delivery work.
 
 ## What it does
 
@@ -29,6 +23,14 @@ No build step is required.
 
 1. Clone the repo.
 2. Open `index.html` in your browser.
+
+Optional local server:
+
+```bash
+python3 -m http.server 8080
+```
+
+Then open `http://localhost:8080`.
 
 ## How scoring works
 
@@ -65,3 +67,9 @@ You can tailor this quickly:
 ## Disclaimer
 
 This is not an official DORA or Google survey implementation. Use it as a practical assessment and conversation starter.
+
+## Research references
+
+- [Accelerate (Forsgren, Humble, Kim)](https://itrevolution.com/product/accelerate/)
+- [DORA research](https://dora.dev/research/)
+- [State of DevOps reports](https://dora.dev/research/state-of-devops/)
