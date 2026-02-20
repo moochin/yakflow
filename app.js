@@ -750,6 +750,8 @@ const progressText = document.getElementById("progressText");
 const progressPercent = document.getElementById("progressPercent");
 const progressFill = document.getElementById("progressFill");
 const viewResultsBtn = document.getElementById("viewResultsBtn");
+const importBtn = document.getElementById("importBtn");
+const importFileInput = document.getElementById("importFileInput");
 const resetBtn = document.getElementById("resetBtn");
 
 let state = loadState();
@@ -793,6 +795,98 @@ function saveState() {
   } catch (error) {
     // Ignore storage errors (private browsing, etc.)
   }
+}
+
+function normalizeScore(rawScore) {
+  if (rawScore === null || rawScore === undefined || rawScore === "") {
+    return null;
+  }
+  const numeric = Number(rawScore);
+  if (!Number.isFinite(numeric)) {
+    return null;
+  }
+  if (numeric >= 0 && numeric <= 3) {
+    return Math.round((numeric / 3) * 4 + 1);
+  }
+  return Math.min(5, Math.max(1, Math.round(numeric)));
+}
+
+function normalizeImportedResponse(capability, response) {
+  if (!response || typeof response !== "object") {
+    return null;
+  }
+
+  const checksLength = (capability.checks || []).length;
+  const checks = Array.from({ length: checksLength }, (_, index) =>
+    Boolean(Array.isArray(response.checks) ? response.checks[index] : false)
+  );
+  let score = normalizeScore(response.score);
+  if (score === null && checksLength > 0) {
+    const checkedCount = checks.filter(Boolean).length;
+    score = scoreFromChecks(checkedCount, checksLength);
+  }
+
+  const imported = {
+    score,
+    checks,
+    blocker: typeof response.blocker === "string" ? response.blocker : "",
+    evidence: typeof response.evidence === "string" ? response.evidence : "",
+  };
+
+  return imported;
+}
+
+function buildStateFromImportPayload(payload) {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("Invalid JSON payload.");
+  }
+
+  const byId = new Map(capabilities.map((capability) => [capability.id, capability]));
+  const importedResponses = {};
+
+  // Supports the exported report format: { responses: [{ id, ... }] }
+  if (Array.isArray(payload.responses)) {
+    payload.responses.forEach((item) => {
+      if (!item || typeof item !== "object" || typeof item.id !== "string") {
+        return;
+      }
+      const capability = byId.get(item.id);
+      if (!capability) {
+        return;
+      }
+      const normalized = normalizeImportedResponse(capability, item);
+      if (normalized) {
+        importedResponses[item.id] = normalized;
+      }
+    });
+  }
+
+  // Also supports saved state format: { responses: { "<id>": { ... } } }
+  if (
+    payload.responses &&
+    typeof payload.responses === "object" &&
+    !Array.isArray(payload.responses)
+  ) {
+    Object.entries(payload.responses).forEach(([id, raw]) => {
+      const capability = byId.get(id);
+      if (!capability) {
+        return;
+      }
+      const normalized = normalizeImportedResponse(capability, raw);
+      if (normalized) {
+        importedResponses[id] = normalized;
+      }
+    });
+  }
+
+  if (Object.keys(importedResponses).length === 0) {
+    throw new Error("No recognized capability responses were found.");
+  }
+
+  return {
+    currentIndex: 0,
+    responses: importedResponses,
+  };
 }
 
 function escapeHtml(value) {
@@ -1762,6 +1856,36 @@ viewResultsBtn.addEventListener("click", () => {
   mode = mode === "survey" ? "results" : "survey";
   render();
 });
+
+if (importBtn && importFileInput) {
+  importBtn.addEventListener("click", () => {
+    importFileInput.click();
+  });
+
+  importFileInput.addEventListener("change", async (event) => {
+    const input = event.target;
+    const file = input.files && input.files[0];
+    if (!file) {
+      return;
+    }
+
+    try {
+      const text = await file.text();
+      const parsed = JSON.parse(text);
+      state = buildStateFromImportPayload(parsed);
+      mode = "survey";
+      saveState();
+      render();
+      alert("Import complete. Survey responses were loaded.");
+    } catch (error) {
+      alert(
+        "Unable to import JSON. Use a Yakflow export file with recognized capability responses."
+      );
+    } finally {
+      input.value = "";
+    }
+  });
+}
 
 resetBtn.addEventListener("click", () => {
   state = { currentIndex: 0, responses: {} };
