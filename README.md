@@ -1,8 +1,8 @@
-<p align="center">
-  <img width="360" alt="Yakflow msacot" src="https://github.com/user-attachments/assets/3bdc9659-0f10-41bf-8aa9-108ebf8953bf" />
-</p>
-
 # Yakflow
+
+<p align="center">
+  <img src="assets/yakflow-mascot.png" alt="Yakflow mascot" width="320" />
+</p>
 
 A lightweight web survey that helps engineering teams assess adoption of the 24 Accelerate capabilities, score current maturity, and get practical next actions to improve fast flow.
 
@@ -70,7 +70,7 @@ You can tailor this quickly:
 
 ## Disclaimer
 
-This is not an official DORA or Google survey implementation. Use it as a practical assessment and conversation starter.
+This is not an official DORA or Google survey implementation. Use it as a team self-assessment and conversation starter, not as a top-down performance metric or individual/team scorecard.
 
 ## Research references
 

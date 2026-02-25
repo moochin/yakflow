@@ -37,6 +37,13 @@ body {
   gap: 24px;
 }
 
+.header-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  flex: 1;
+}
+
 .header-copy h1 {
   margin: 8px 0 10px;
   font-size: clamp(2rem, 3vw, 3rem);
@@ -46,8 +53,17 @@ body {
 .header-copy p {
   margin: 0;
   color: var(--muted);
-  max-width: 560px;
+  max-width: 620px;
   line-height: 1.5;
+}
+
+.usage-note {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: #f8f5ee;
+  font-size: 0.92rem;
 }
 
 .eyebrow {
@@ -61,6 +77,32 @@ body {
 .header-actions {
   display: flex;
   gap: 12px;
+}
+
+.yakflow-brand {
+  width: 270px;
+  min-height: 120px;
+  padding: 8px;
+  display: grid;
+  place-items: center;
+}
+
+.yakflow-mascot {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.yakflow-brand-fallback {
+  display: none;
+  font-size: 0.75rem;
+  color: var(--muted);
+  text-align: center;
+  line-height: 1.35;
+}
+
+.yakflow-brand.missing .yakflow-brand-fallback {
+  display: block;
 }
 
 button {
@@ -623,12 +665,22 @@ textarea {
     align-items: flex-start;
   }
 
+  .header-main {
+    width: 100%;
+    align-items: flex-start;
+  }
+
   .header-actions {
     width: 100%;
   }
 
   .header-actions button {
     flex: 1;
+  }
+
+  .yakflow-brand {
+    width: 130px;
+    min-height: 90px;
   }
 
   .slider-ticks .tick {

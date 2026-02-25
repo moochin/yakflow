@@ -1626,6 +1626,9 @@ function renderResults() {
     </div>
     <h2>Adoption snapshot</h2>
     <p>Use this summary to align on priorities and agree on next steps.</p>
+    <p class="impact-note">
+      Use these results for team-led learning and workflow improvement. Do not use this as a top-down performance scorecard.
+    </p>
 
     <div class="results-section results-grid">
       <div class="metric ${impactBand(overall).className}">
