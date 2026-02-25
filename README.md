@@ -21,6 +21,10 @@ Many capability surveys are heavy on management language. Yakflow is written for
 - Exports results as JSON.
 - Persists progress in browser `localStorage`.
 
+## Use online
+
+https://moochin.github.io/yakflow/ 
+
 ## Run locally
 
 No build step is required.
