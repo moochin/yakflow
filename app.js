@@ -743,6 +743,8 @@ const EXAMPLES_BY_ID = {
   ],
 };
 
+const startModal = document.getElementById("startModal");
+const startModalCard = document.getElementById("startModalCard");
 const surveyView = document.getElementById("surveyView");
 const resultsView = document.getElementById("resultsView");
 const categoryList = document.getElementById("categoryList");
@@ -756,6 +758,7 @@ const resetBtn = document.getElementById("resetBtn");
 
 let state = loadState();
 let mode = "survey";
+let lastNonResultsMode = "survey";
 let comparisonData = null;
 
 function loadState() {
@@ -890,6 +893,16 @@ function buildStateFromImportPayload(payload) {
   };
 }
 
+async function importCurrentJsonFromFile(file) {
+  if (!file) return false;
+  const text = await file.text();
+  const parsed = JSON.parse(text);
+  state = buildStateFromImportPayload(parsed);
+  comparisonData = null;
+  saveState();
+  return true;
+}
+
 function escapeHtml(value) {
   return String(value || "")
     .replace(/&/g, "&amp;")
@@ -1020,6 +1033,89 @@ function renderSidebar() {
       }
     });
   });
+}
+
+function closeStartModal() {
+  if (!startModal) return;
+  startModal.classList.add("hidden");
+  document.body.classList.remove("modal-open");
+}
+
+function openStartModal() {
+  if (!startModal || !startModalCard) return;
+  renderStartModal();
+  startModal.classList.remove("hidden");
+  document.body.classList.add("modal-open");
+}
+
+function renderStartModal() {
+  if (!startModalCard) return;
+  startModalCard.innerHTML = `
+    <div class="card-header">
+      <span>Welcome</span>
+      <span>Yakflow</span>
+    </div>
+    <h2>👥 Team capability self-assessment for fast flow</h2>
+    <p>
+      Yakflow helps engineering teams assess adoption of the 24 Accelerate capabilities,
+      identify friction, and agree practical next steps.
+    </p>
+    <div class="start-callout">
+      <strong>⚠️ Use guidance:</strong>
+      <div>Use this as a team-led improvement tool.</div>
+      <div>Do not use scores as a top-down performance metric for teams or individuals.</div>
+    </div>
+
+    <div class="start-sections">
+      <div class="start-block">
+        <h3>🧭 How to use</h3>
+        <ol>
+          <li>Complete the survey as a team, with engineers who do the work.</li>
+          <li>Use checklist signals to score each capability consistently.</li>
+          <li>Review strengths, weak spots, and suggested actions.</li>
+          <li>Agree 1-3 improvement experiments for the next period.</li>
+        </ol>
+      </div>
+      <div class="start-block">
+        <h3>📈 Measure over time</h3>
+        <ul>
+          <li>Run on a regular cadence (for example every 4-8 weeks).</li>
+          <li>Export results after each run.</li>
+          <li>In Results, upload a previous JSON to compare radar and deltas.</li>
+        </ul>
+      </div>
+      <div class="start-block">
+        <h3>📦 What you get</h3>
+        <ul>
+          <li>Overall and category scores</li>
+          <li>Relationship and impact view</li>
+          <li>Prioritized next steps</li>
+          <li>Comparison view against previous results</li>
+        </ul>
+      </div>
+    </div>
+
+    <p class="impact-note">🔒 Data stays in your browser unless you export/import JSON.</p>
+
+    <div class="start-actions">
+      <button class="primary" id="startSurveyBtn">Start survey</button>
+      <button class="ghost" id="startImportBtn">Upload current JSON</button>
+    </div>
+  `;
+
+  const startSurveyBtn = startModalCard.querySelector("#startSurveyBtn");
+  if (startSurveyBtn) {
+    startSurveyBtn.addEventListener("click", () => {
+      closeStartModal();
+    });
+  }
+
+  const startImportBtn = startModalCard.querySelector("#startImportBtn");
+  if (startImportBtn && importFileInput) {
+    startImportBtn.addEventListener("click", () => {
+      importFileInput.click();
+    });
+  }
 }
 
 function renderSurvey() {
@@ -1952,7 +2048,7 @@ function renderResults() {
     </div>
 
     <div class="nav-actions">
-      <button class="ghost" id="backToSurvey">Back to survey</button>
+      <button class="ghost" id="backToSurvey">Back</button>
       <button class="secondary" id="exportBtn">Download JSON</button>
     </div>
 
@@ -2016,7 +2112,7 @@ function renderResults() {
   }
 
   resultsView.querySelector("#backToSurvey").addEventListener("click", () => {
-    mode = "survey";
+    mode = lastNonResultsMode || "survey";
     render();
   });
 
@@ -2072,11 +2168,14 @@ function buildReport() {
 function render() {
   updateProgress();
   renderSidebar();
+  if (mode !== "results") {
+    lastNonResultsMode = mode;
+  }
   if (mode === "results") {
     surveyView.classList.add("hidden");
     resultsView.classList.remove("hidden");
     renderResults();
-    viewResultsBtn.textContent = "Back to survey";
+    viewResultsBtn.textContent = "Back";
   } else {
     resultsView.classList.add("hidden");
     surveyView.classList.remove("hidden");
@@ -2086,7 +2185,12 @@ function render() {
 }
 
 viewResultsBtn.addEventListener("click", () => {
-  mode = mode === "survey" ? "results" : "survey";
+  if (mode === "results") {
+    mode = lastNonResultsMode || "survey";
+  } else {
+    lastNonResultsMode = mode;
+    mode = "results";
+  }
   render();
 });
 
@@ -2103,11 +2207,9 @@ if (importBtn && importFileInput) {
     }
 
     try {
-      const text = await file.text();
-      const parsed = JSON.parse(text);
-      state = buildStateFromImportPayload(parsed);
+      await importCurrentJsonFromFile(file);
       mode = "survey";
-      saveState();
+      closeStartModal();
       render();
       alert("Import complete. Survey responses were loaded.");
     } catch (error) {
@@ -2122,9 +2224,12 @@ if (importBtn && importFileInput) {
 
 resetBtn.addEventListener("click", () => {
   state = { currentIndex: 0, responses: {} };
+  comparisonData = null;
   mode = "survey";
   saveState();
   render();
+  openStartModal();
 });
 
 render();
+openStartModal();
