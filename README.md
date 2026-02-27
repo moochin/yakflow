@@ -19,6 +19,7 @@ Many capability surveys are heavy on management language. Yakflow is written for
 - Shows category-level results in a radar (spider) chart.
 - Generates prioritized next steps by capability and by category.
 - Exports results as JSON.
+- Compares current results against a previous JSON export with a dual radar and change summary.
 - Persists progress in browser `localStorage`.
 
 ## Use online

@@ -483,6 +483,56 @@ textarea {
   display: block;
 }
 
+.compare-actions {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.compare-legend {
+  margin-top: 10px;
+  display: flex;
+  gap: 10px;
+}
+
+.legend-chip {
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.8rem;
+  border: 1px solid var(--line);
+}
+
+.current-chip {
+  background: rgba(47, 111, 100, 0.14);
+  border-color: rgba(47, 111, 100, 0.4);
+}
+
+.previous-chip {
+  background: rgba(212, 106, 31, 0.14);
+  border-color: rgba(212, 106, 31, 0.45);
+}
+
+.delta-list {
+  display: grid;
+  gap: 8px;
+}
+
+.delta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 6px;
+}
+
+.delta-up {
+  color: #1d4f46;
+}
+
+.delta-down {
+  color: #a84a2e;
+}
+
 .impact-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -695,5 +745,9 @@ textarea {
 
   .impact-grid {
     grid-template-columns: 1fr;
+  }
+
+  .compare-actions {
+    flex-wrap: wrap;
   }
 }

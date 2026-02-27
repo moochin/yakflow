@@ -756,6 +756,7 @@ const resetBtn = document.getElementById("resetBtn");
 
 let state = loadState();
 let mode = "survey";
+let comparisonData = null;
 
 function loadState() {
   try {
@@ -1274,11 +1275,15 @@ function renderSurvey() {
 }
 
 function calculateAverages() {
+  return calculateAveragesFromResponses(state.responses);
+}
+
+function calculateAveragesFromResponses(responses) {
   const grouped = groupByCategory();
   const categoryScores = {};
   Object.keys(grouped).forEach((category) => {
     const scores = grouped[category]
-      .map((cap) => state.responses[cap.id])
+      .map((cap) => responses[cap.id])
       .filter((response) => response && response.score !== undefined)
       .map((response) => response.score);
     if (scores.length > 0) {
@@ -1289,7 +1294,7 @@ function calculateAverages() {
     }
   });
 
-  const allScores = Object.values(state.responses)
+  const allScores = Object.values(responses)
     .filter((response) => response && response.score !== undefined)
     .map((response) => response.score);
   const overall =
@@ -1559,6 +1564,97 @@ function renderRadarChart(canvasId, labels, values, maxValue) {
   });
 }
 
+function renderComparisonRadarChart(
+  canvasId,
+  labels,
+  currentValues,
+  previousValues,
+  maxValue
+) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const parent = canvas.parentElement;
+  const size = Math.min(620, parent ? parent.clientWidth : 620);
+  const width = Math.max(320, size);
+  const height = Math.max(300, Math.round(width * 0.72));
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+
+  ctx.clearRect(0, 0, width, height);
+
+  const centerX = width / 2;
+  const centerY = height / 2 + 12;
+  const radius = Math.min(width, height) * 0.33;
+  const steps = 5;
+  const angleStep = (Math.PI * 2) / labels.length;
+
+  ctx.strokeStyle = "rgba(47, 111, 100, 0.2)";
+  ctx.lineWidth = 1;
+  for (let ring = 1; ring <= steps; ring += 1) {
+    const r = (radius * ring) / steps;
+    ctx.beginPath();
+    labels.forEach((_, index) => {
+      const angle = index * angleStep - Math.PI / 2;
+      const x = centerX + r * Math.cos(angle);
+      const y = centerY + r * Math.sin(angle);
+      if (index === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.closePath();
+    ctx.stroke();
+  }
+
+  ctx.strokeStyle = "rgba(47, 111, 100, 0.35)";
+  labels.forEach((_, index) => {
+    const angle = index * angleStep - Math.PI / 2;
+    const x = centerX + radius * Math.cos(angle);
+    const y = centerY + radius * Math.sin(angle);
+    ctx.beginPath();
+    ctx.moveTo(centerX, centerY);
+    ctx.lineTo(x, y);
+    ctx.stroke();
+  });
+
+  function drawSeries(values, fillColor, strokeColor) {
+    const points = values.map((value, index) => {
+      const normalized = Math.max(0, Math.min(maxValue, value || 0)) / maxValue;
+      const r = radius * normalized;
+      const angle = index * angleStep - Math.PI / 2;
+      return {
+        x: centerX + r * Math.cos(angle),
+        y: centerY + r * Math.sin(angle),
+      };
+    });
+    ctx.fillStyle = fillColor;
+    ctx.strokeStyle = strokeColor;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    points.forEach((point, index) => {
+      if (index === 0) ctx.moveTo(point.x, point.y);
+      else ctx.lineTo(point.x, point.y);
+    });
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+  }
+
+  drawSeries(previousValues, "rgba(212, 106, 31, 0.18)", "rgba(212, 106, 31, 0.85)");
+  drawSeries(currentValues, "rgba(47, 111, 100, 0.22)", "rgba(47, 111, 100, 0.9)");
+
+  ctx.fillStyle = "#1c1b18";
+  ctx.font = "12px \"IBM Plex Sans\", sans-serif";
+  labels.forEach((label, index) => {
+    const angle = index * angleStep - Math.PI / 2;
+    const x = centerX + (radius + 24) * Math.cos(angle);
+    const y = centerY + (radius + 24) * Math.sin(angle);
+    ctx.textAlign = x < centerX ? "right" : "left";
+    ctx.textBaseline = y < centerY ? "bottom" : "top";
+    ctx.fillText(label, x, y);
+  });
+}
+
 function renderResults() {
   const { overall, categoryScores } = calculateAverages();
   const unanswered = capabilities.filter((cap) => !isAnswered(cap));
@@ -1567,6 +1663,29 @@ function renderResults() {
   const categoryValues = categoryLabels.map(
     (label) => categoryScores[label] ?? 0
   );
+  const previousCategoryValues = categoryLabels.map((label) =>
+    comparisonData ? comparisonData.categoryScores[label] ?? 0 : 0
+  );
+  const overallDelta =
+    comparisonData && overall !== null && comparisonData.overall !== null
+      ? overall - comparisonData.overall
+      : null;
+  const categoryDeltas = categoryLabels
+    .map((label) => {
+      const current = categoryScores[label];
+      const previous = comparisonData ? comparisonData.categoryScores[label] : null;
+      if (current === null || previous === null || previous === undefined) {
+        return null;
+      }
+      return {
+        label,
+        delta: current - previous,
+        current,
+        previous,
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta));
   const categoryGuidance = Object.entries(groupByCategory()).map(
     ([category, caps]) => {
       const scored = caps
@@ -1657,6 +1776,70 @@ function renderResults() {
       <div class="chart-card">
         <canvas id="radarChart" width="520" height="420"></canvas>
       </div>
+    </div>
+
+    <div class="results-section">
+      <h3>Comparison view</h3>
+      <p>Upload a previous export to compare with current responses.</p>
+      <div class="compare-actions">
+        <button class="ghost" id="compareUploadBtn">Compare previous JSON</button>
+        ${
+          comparisonData
+            ? `<button class="ghost" id="clearCompareBtn">Clear comparison</button>`
+            : ""
+        }
+        <input id="compareFileInput" type="file" accept=".json,application/json" hidden />
+      </div>
+      ${
+        comparisonData
+          ? `
+        <div class="chart-card">
+          <canvas id="compareRadarChart" width="620" height="460"></canvas>
+          <div class="compare-legend">
+            <span class="legend-chip current-chip">Current</span>
+            <span class="legend-chip previous-chip">Previous</span>
+          </div>
+        </div>
+        <div class="results-grid">
+          <div class="metric ${overallDelta === null ? "band-none" : overallDelta >= 0 ? "band-strong" : "band-risk"}">
+            <h4>Overall change</h4>
+            <div class="score">${
+              overallDelta === null
+                ? "--"
+                : `${overallDelta >= 0 ? "+" : ""}${overallDelta.toFixed(2)}`
+            }</div>
+            <div>${
+              overall !== null ? `Current ${overall.toFixed(2)} / 5` : "No current score"
+            }</div>
+            <div>${
+              comparisonData.overall !== null
+                ? `Previous ${comparisonData.overall.toFixed(2)} / 5`
+                : "No previous score"
+            }</div>
+          </div>
+          <div class="metric">
+            <h4>Category deltas</h4>
+            <div class="delta-list">
+              ${
+                categoryDeltas.length > 0
+                  ? categoryDeltas
+                      .map(
+                        (item) => `<div class="delta-row">
+                    <span>${item.label}</span>
+                    <strong class="${item.delta >= 0 ? "delta-up" : "delta-down"}">${
+                          item.delta >= 0 ? "+" : ""
+                        }${item.delta.toFixed(2)}</strong>
+                  </div>`
+                      )
+                      .join("")
+                  : "<div>No comparable category data found.</div>"
+              }
+            </div>
+          </div>
+        </div>
+      `
+          : `<div class="metric band-none">No comparison loaded yet.</div>`
+      }
     </div>
 
     <div class="results-section">
@@ -1784,6 +1967,53 @@ function renderResults() {
   `;
 
   renderRadarChart("radarChart", categoryLabels, categoryValues, 5);
+  if (comparisonData) {
+    renderComparisonRadarChart(
+      "compareRadarChart",
+      categoryLabels,
+      categoryValues,
+      previousCategoryValues,
+      5
+    );
+  }
+
+  const compareUploadBtn = resultsView.querySelector("#compareUploadBtn");
+  const compareFileInput = resultsView.querySelector("#compareFileInput");
+  if (compareUploadBtn && compareFileInput) {
+    compareUploadBtn.addEventListener("click", () => compareFileInput.click());
+    compareFileInput.addEventListener("change", async (event) => {
+      const input = event.target;
+      const file = input.files && input.files[0];
+      if (!file) return;
+      try {
+        const text = await file.text();
+        const parsed = JSON.parse(text);
+        const importedState = buildStateFromImportPayload(parsed);
+        const importedAverages = calculateAveragesFromResponses(
+          importedState.responses
+        );
+        comparisonData = {
+          overall: importedAverages.overall,
+          categoryScores: importedAverages.categoryScores,
+        };
+        render();
+      } catch (error) {
+        alert(
+          "Unable to load comparison JSON. Use a Yakflow export or compatible response JSON."
+        );
+      } finally {
+        input.value = "";
+      }
+    });
+  }
+
+  const clearCompareBtn = resultsView.querySelector("#clearCompareBtn");
+  if (clearCompareBtn) {
+    clearCompareBtn.addEventListener("click", () => {
+      comparisonData = null;
+      render();
+    });
+  }
 
   resultsView.querySelector("#backToSurvey").addEventListener("click", () => {
     mode = "survey";
